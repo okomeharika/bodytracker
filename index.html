@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#f6eee4;--paper:#fffaf3;--paper2:#f1e4d5;--ink:#624832;--muted:#9b8068;--line:#e6d5c2;--weight:#a96f49;--fat:#78958f;--goal:#bd8c62;--shadow:0 8px 24px rgba(91,63,39,.07)}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
-button,input{font:inherit}button{cursor:pointer;border:0}
+button,input{font:inherit}button{cursor:pointer;border:0;touch-action:manipulation}
 .app{max-width:680px;margin:0 auto;padding:20px 16px 24px}
 header{display:flex;justify-content:space-between;align-items:center;margin:5px 2px 22px}
 .brand{font-size:22px;font-weight:800;letter-spacing:.02em}.sub{font-size:10px;letter-spacing:.16em;color:var(--muted);margin-top:3px}
@@ -51,9 +51,66 @@ svg.chart{display:block;width:100%;height:auto;overflow:visible;touch-action:pan
 .modal-back{display:none;position:fixed;inset:0;background:#38271966;z-index:20;align-items:center;justify-content:center;padding:20px}.modal-back.show{display:flex}.modal{background:var(--paper);border-radius:20px;padding:20px;width:min(100%,360px);box-shadow:var(--shadow)}.modal h2{margin-bottom:14px}.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.modal label{font-size:11px;color:var(--muted)}.modal input{width:100%;margin-top:5px;border:1px solid var(--line);border-radius:11px;padding:11px;background:white;color:var(--ink)}.modal-actions{display:flex;gap:8px;margin-top:16px}.modal-actions button{flex:1}.delete{background:#f4e5e1;color:#9b5144}
 .empty{padding:28px 12px;text-align:center;color:var(--muted);font-size:12px}
 @media(min-width:600px){.app{padding-top:28px}.key{height:58px}}
+
+/* ===== 記録・目標ページ：スクロールなしで1画面に収める（グラフページは通常スクロール） ===== */
+body.fit{height:100dvh;overflow:hidden;padding-bottom:0}
+body.fit .app{height:100dvh;display:flex;flex-direction:column;padding:10px 16px calc(var(--nav-h,76px) + 8px)}
+body.fit header{margin:0 2px 8px;flex:none}
+body.fit .page.active{flex:1;min-height:0;display:flex;flex-direction:column}
+body.fit h1{font-size:20px;margin:0 0 2px;flex:none}
+body.fit .lead{margin:0 0 8px;flex:none}
+body.fit .card{margin-bottom:8px;padding:14px}
+body.fit #page-record>.card{flex:1;min-height:0;display:flex;flex-direction:column}
+body.fit .metrics{margin:10px 0}
+.metric{color:var(--ink);font-family:inherit}
+body.fit .metric{padding:10px 12px}
+body.fit .metric .value{font-size:26px;margin-top:3px}
+body.fit .keypad{flex:1;min-height:0;grid-auto-rows:minmax(0,1fr);gap:7px;margin-top:8px}
+body.fit .key{height:auto;min-height:0;max-height:60px}
+body.fit .primary{margin-top:8px;padding:12px}
+body.fit .status{margin-top:6px;min-height:14px}
+body.fit #page-record .section-head{margin:4px 2px 6px;flex:none}
+body.fit #page-record .section-head h2{font-size:14px;margin:0}
+body.fit .record-list{gap:6px;flex:none}
+body.fit .record-row{padding:8px 12px}
+body.fit #recent-list .record-row:nth-child(n+4){display:none}
+body.fit #page-goal .card{flex:none}
+body.fit #page-goal h2{margin:0 0 8px}
+body.fit .goal-display{padding:12px 16px;margin:8px 0}
+body.fit .goal-number{font-size:30px}
+body.fit .goal-input{padding:10px 13px;margin:6px 0 8px}
+body.fit .summary{margin-top:0}
+body.fit .mini{padding:9px 12px}
+@media (max-height:800px){
+  body.fit #recent-list .record-row:nth-child(n+3){display:none}
+  body.fit .lead{display:none}
+}
+@media (max-height:720px){
+  body.fit #page-record .section-head,body.fit #recent-list{display:none}
+  body.fit .card{padding:12px}
+  body.fit .metric .hint{display:none}
+  body.fit #page-goal .card p{display:none}
+  body.fit #export-csv{margin-top:0!important}
+}
+
+@media (max-height:800px){
+  body.fit .sub{display:none}
+  body.fit header{margin-bottom:4px}
+  body.fit .brand{font-size:19px}
+  body.fit #page-goal .goal-display{display:flex;align-items:baseline;justify-content:space-between;padding:8px 14px;margin:4px 0}
+  body.fit #page-goal .goal-display .date-label{margin:0}
+  body.fit #page-goal .goal-number{font-size:26px}
+  body.fit #page-goal .card>.status{display:none}
+  body.fit #page-goal .goal-input{padding:8px 12px;margin:4px 0 6px;font-size:18px}
+  body.fit #page-goal .primary{padding:10px;margin-top:6px}
+  body.fit #page-goal .card{padding:12px;margin-bottom:6px}
+  body.fit #page-goal .card p{display:none}
+  body.fit #export-csv{margin-top:0!important}
+  body.fit .mini strong{font-size:17px;margin-top:2px}
+}
 </style>
 </head>
-<body>
+<body class="fit">
 <div class="app">
 <header><div><div class="brand">Body Tracker</div><div class="sub">DAILY RECORD & WELLNESS</div></div><div style="font-size:20px">☼</div></header>
 
@@ -75,7 +132,7 @@ svg.chart{display:block;width:100%;height:auto;overflow:visible;touch-action:pan
     <button class="primary" id="record-action">記入する</button>
     <div class="status" id="input-status">数字キーで体重を入力してください</div>
   </div>
-  <div class="section-head"><h2>最近の記録</h2><span style="font-size:10px;color:var(--muted)">最新5件</span></div>
+  <div class="section-head"><h2>最近の記録</h2></div>
   <div class="record-list" id="recent-list"></div>
 </section>
 
@@ -126,33 +183,47 @@ function saveData(){localStorage.setItem('bodyTrackerRecords',JSON.stringify(rec
 function fmt(v){return Number(v).toFixed(1)}
 function showToast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2300)}
 function selectedDate(){return $('record-date').value||today()}
-function loadDate(){const r=records[selectedDate()];drafts={weight:r?.weight!=null?fmt(r.weight):'',fat:r?.fat!=null?fmt(r.fat):''};stage=0;activeField='weight';updateEntry()}
+let fresh=false; // true: 次に押した数字で今の値を置き換える
+// stage 0=体重入力 / 1=体脂肪率入力 / 2=欄をタップして編集中
+function loadDate(){const r=records[selectedDate()];drafts={weight:r?.weight!=null?fmt(r.weight):'',fat:r?.fat!=null?fmt(r.fat):''};stage=0;activeField='weight';fresh=drafts.weight!=='';updateEntry()}
+function validNum(s,f){if(s===''||!Number.isFinite(Number(s)))return false;return f==='weight'?Number(s)>0:Number(s)>=0}
 function updateEntry(){
+  const show=v=>v===''?'—':v;
   $('date-caption').textContent=selectedDate()===today()?'今日':selectedDate();
-  $('weight-display').innerHTML=(drafts.weight===''?'—':fmt(drafts.weight))+'<span class="unit">kg</span>';
-  $('fat-display').innerHTML=(drafts.fat===''?'—':fmt(drafts.fat))+'<span class="unit">%</span>';
+  $('weight-display').innerHTML=show(drafts.weight)+'<span class="unit">kg</span>';
+  $('fat-display').innerHTML=show(drafts.fat)+'<span class="unit">%</span>';
   $('weight-box').classList.toggle('selected',activeField==='weight');$('fat-box').classList.toggle('selected',activeField==='fat');
-  $('input-label').textContent=activeField==='weight'?'体重を入力':'体脂肪率を入力';
-  $('input-step').textContent=stage===0?'STEP 1 / 2':'STEP 2 / 2';
-  $('input-status').textContent=activeField==='weight'?'数字キーで体重を入力してください':'数字キーで体脂肪率を入力してください';
+  const name=activeField==='weight'?'体重':'体脂肪率';
+  $('input-label').textContent=name+'を入力';
+  $('input-step').textContent=stage===2?'編集中':(activeField==='weight'?'STEP 1 / 2':'STEP 2 / 2');
+  $('input-status').textContent=stage===2?`数字キーで${name}を入力し、「記入する」で決定`:`数字キーで${name}を入力してください`;
 }
 function keypadInput(k){
  let s=drafts[activeField]||'';
- if(k==='back')s=s.slice(0,-1);
- else if(k==='.' ){if(!s.includes('.'))s=s===''?'0.':s+'.'}
- else {if(s.replace('.','').length>=5)return;s+=k}
+ if(k==='back'){s=s.slice(0,-1);fresh=false}
+ else{
+  if(fresh){s='';fresh=false}
+  if(k==='.'){if(s.includes('.'))return;s=s===''?'0.':s+'.'}
+  else{if(s.replace('.','').length>=5)return;s=(s==='0'?'':s)+k}
+ }
  drafts[activeField]=s;updateEntry();
 }
 $('keypad').addEventListener('click',e=>{const b=e.target.closest('[data-key]');if(b)keypadInput(b.dataset.key)});
-$('weight-box').onclick=()=>{activeField='weight';stage=1;updateEntry()};
-$('fat-box').onclick=()=>{activeField='fat';stage=1;updateEntry()};
+function pickField(f){const changed=activeField!==f;activeField=f;stage=2;if(changed)fresh=drafts[f]!=='';updateEntry()}
+$('weight-box').onclick=()=>pickField('weight');
+$('fat-box').onclick=()=>pickField('fat');
 $('record-action').onclick=()=>{
- const date=selectedDate();
- if(activeField==='weight'&&stage===0){if(drafts.weight===''||!Number.isFinite(Number(drafts.weight))){showToast('体重を入力してください');return}activeField='fat';stage=1;updateEntry();return}
- if(drafts[activeField]===''||!Number.isFinite(Number(drafts[activeField]))){showToast((activeField==='weight'?'体重':'体脂肪率')+'を入力してください');return}
- if(activeField==='weight'){activeField='fat';stage=1;updateEntry();return}
- if(drafts.weight===''||drafts.fat===''){showToast('体重と体脂肪率を入力してください');return}
- records[date]={weight:Number(fmt(drafts.weight)),fat:Number(fmt(drafts.fat))};saveData();renderAll();showToast(`${fmt(drafts.weight)} kg / ${fmt(drafts.fat)}% で保存しました！`);stage=0;activeField='weight';updateEntry();
+ const f=activeField,name=f==='weight'?'体重':'体脂肪率',other=f==='weight'?'fat':'weight';
+ if(drafts[f].endsWith('.'))drafts[f]=drafts[f].slice(0,-1);
+ if(!validNum(drafts[f],f)){showToast(name+'を入力してください');updateEntry();return}
+ if(stage===0){activeField='fat';stage=1;fresh=drafts.fat!=='';updateEntry();return} // 体重 → 体脂肪率へ
+ if(!validNum(drafts[other],other)){ // 片方が未入力ならそちらへ
+  activeField=other;stage=other==='weight'?0:1;fresh=false;updateEntry();
+  showToast((other==='weight'?'体重':'体脂肪率')+'も入力してください');return}
+ const date=selectedDate(),w=Number(fmt(drafts.weight)),fa=Number(fmt(drafts.fat));
+ records[date]={weight:w,fat:fa};saveData();renderAll();
+ showToast(`${fmt(w)} kg / ${fmt(fa)}% で保存しました！`);
+ loadDate();
 };
 $('record-date').value=today();$('record-date').addEventListener('change',loadDate);
 
@@ -176,8 +247,8 @@ function svgChart(data,{daily=false,goalLine=false,height=230}={}){
  const weights=data.map(x=>x.weight),fats=data.map(x=>x.fat);
  let wmin=Math.min(...weights),wmax=Math.max(...weights),fmin=Math.min(...fats),fmax=Math.max(...fats);
  if(goalLine&&goal!==''){wmin=Math.min(wmin,Number(goal));wmax=Math.max(wmax,Number(goal))}
- const pad=(max-min)=>Math.max((max-min)*.18,.5);
- wmin-=pad(wmax-wmin);wmax+=pad(wmax-wmin);fmin-=pad(fmax-fmin);fmax+=pad(fmax-fmin);
+ const pad=r=>Math.max(r*.18,.5);
+ {const p=pad(wmax-wmin);wmin-=p;wmax+=p}{const p=pad(fmax-fmin);fmin-=p;fmax+=p}
  const x=i=>L+(data.length===1?iw/2:i*iw/(data.length-1));
  const yw=v=>T+ih-(v-wmin)/(wmax-wmin)*ih, yf=v=>T+ih-(v-fmin)/(fmax-fmin)*ih;
  const path=(key,fn)=>data.map((d,i)=>(i?'L':'M')+x(i).toFixed(1)+','+fn(d[key]).toFixed(1)).join(' ');
@@ -213,7 +284,9 @@ function renderGoal(){
 $('save-goal').onclick=()=>{const v=$('goal-input').value;if(v===''||!Number.isFinite(Number(v))||Number(v)<=0){showToast('目標体重を入力してください');return}goal=fmt(v);saveData();renderAll();showToast(`目標体重を ${goal} kg に設定しました！`)};
 $('export-csv').onclick=()=>{const rows=[['date','weight_kg','body_fat_percent'],...Object.entries(records).sort((a,b)=>a[0].localeCompare(b[0])).map(([d,r])=>[d,fmt(r.weight),fmt(r.fat)])];const csv='\uFEFF'+rows.map(r=>r.join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='body-tracker.csv';a.click();URL.revokeObjectURL(a.href)};
 function renderAll(){renderRecent();renderAllList();renderCharts();renderGoal()}
-document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+b.dataset.page));if(b.dataset.page==='chart')renderCharts();if(b.dataset.page==='goal')renderGoal()});
+document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+b.dataset.page));document.body.classList.toggle('fit',b.dataset.page!=='chart');window.scrollTo(0,0);setNavH();if(b.dataset.page==='chart')renderCharts();if(b.dataset.page==='goal')renderGoal()});
+function setNavH(){const n=document.querySelector('.bottom-nav');if(n)document.documentElement.style.setProperty('--nav-h',n.offsetHeight+'px')}
+setNavH();addEventListener('resize',setNavH);
 loadDate();renderAll();
 </script>
 </body>
