@@ -168,7 +168,7 @@ body.fit .mini{padding:9px 12px}
 
 <div class="modal-back" id="edit-modal"><div class="modal">
 <h2>記録を編集</h2><label>日付</label><input type="date" id="edit-date" style="width:100%;margin:5px 0 12px">
-<div class="modal-grid"><label>体重（kg）<input type="number" id="edit-weight" step="0.1"></label><label>体脂肪率（%）<input type="number" id="edit-fat" step="0.1"></label></div>
+<div class="modal-grid"><label>体重（kg）<input type="number" id="edit-weight" step="0.1"></label><label>体脂肪率（%）<input type="number" id="edit-fat" step="0.1" placeholder="未入力でもOK"></label></div>
 <div class="modal-actions"><button class="secondary delete" id="delete-record">削除</button><button class="secondary" id="cancel-edit">キャンセル</button><button class="primary" id="save-edit" style="margin:0">保存</button></div>
 </div></div>
 
@@ -196,7 +196,7 @@ function updateEntry(){
   const name=activeField==='weight'?'体重':'体脂肪率';
   $('input-label').textContent=name+'を入力';
   $('input-step').textContent=stage===2?'編集中':(activeField==='weight'?'STEP 1 / 2':'STEP 2 / 2');
-  $('input-status').textContent=stage===2?`数字キーで${name}を入力し、「記入する」で決定`:`数字キーで${name}を入力してください`;
+  $('input-status').textContent=activeField==='fat'?'体脂肪率は未入力のまま「記入する」でも記録できます':(stage===2?`数字キーで${name}を入力し、「記入する」で決定`:`数字キーで${name}を入力してください`);
 }
 function keypadInput(k){
  let s=drafts[activeField]||'';
@@ -213,58 +213,58 @@ function pickField(f){const changed=activeField!==f;activeField=f;stage=2;if(cha
 $('weight-box').onclick=()=>pickField('weight');
 $('fat-box').onclick=()=>pickField('fat');
 $('record-action').onclick=()=>{
- const f=activeField,name=f==='weight'?'体重':'体脂肪率',other=f==='weight'?'fat':'weight';
+ const f=activeField,name=f==='weight'?'体重':'体脂肪率';
  if(drafts[f].endsWith('.'))drafts[f]=drafts[f].slice(0,-1);
- if(!validNum(drafts[f],f)){showToast(name+'を入力してください');updateEntry();return}
+ const skipFat=f==='fat'&&drafts.fat===''; // 体脂肪率は未入力でもOK
+ if(!skipFat&&!validNum(drafts[f],f)){showToast(name+'を入力してください');updateEntry();return}
  if(stage===0){activeField='fat';stage=1;fresh=drafts.fat!=='';updateEntry();return} // 体重 → 体脂肪率へ
- if(!validNum(drafts[other],other)){ // 片方が未入力ならそちらへ
-  activeField=other;stage=other==='weight'?0:1;fresh=false;updateEntry();
-  showToast((other==='weight'?'体重':'体脂肪率')+'も入力してください');return}
- const date=selectedDate(),w=Number(fmt(drafts.weight)),fa=Number(fmt(drafts.fat));
+ if(!validNum(drafts.weight,'weight')){activeField='weight';stage=0;fresh=false;updateEntry();showToast('体重を入力してください');return}
+ const date=selectedDate(),w=Number(fmt(drafts.weight)),fa=drafts.fat===''?null:Number(fmt(drafts.fat));
  records[date]={weight:w,fat:fa};saveData();renderAll();
- showToast(`${fmt(w)} kg / ${fmt(fa)}% で保存しました！`);
+ showToast(fa===null?`${fmt(w)} kg で保存しました！`:`${fmt(w)} kg / ${fmt(fa)}% で保存しました！`);
  loadDate();
 };
 $('record-date').value=today();$('record-date').addEventListener('change',loadDate);
 
+const fatTxt=r=>r.fat==null?'—':fmt(r.fat)+'%';
 function renderRecent(){
  const entries=Object.entries(records).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,5);
- $('recent-list').innerHTML=entries.length?entries.map(([d,r])=>`<div class="record-row"><span>${d}</span><strong>${fmt(r.weight)} kg　/　${fmt(r.fat)}%</strong><button data-edit="${d}">編集</button></div>`).join(''):'<div class="empty">まだ記録がありません。最初の記録を入力してみましょう。</div>';
+ $('recent-list').innerHTML=entries.length?entries.map(([d,r])=>`<div class="record-row"><span>${d}</span><strong>${fmt(r.weight)} kg　/　${fatTxt(r)}</strong><button data-edit="${d}">編集</button></div>`).join(''):'<div class="empty">まだ記録がありません。最初の記録を入力してみましょう。</div>';
 }
 function renderAllList(){
  const entries=Object.entries(records).sort((a,b)=>b[0].localeCompare(a[0]));
- $('all-list').innerHTML=entries.length?entries.map(([d,r])=>`<div class="record-row"><span>${d}</span><strong>${fmt(r.weight)} kg　/　${fmt(r.fat)}%</strong><button data-edit="${d}">編集</button></div>`).join(''):'<div class="empty">記録はまだありません。</div>';
+ $('all-list').innerHTML=entries.length?entries.map(([d,r])=>`<div class="record-row"><span>${d}</span><strong>${fmt(r.weight)} kg　/　${fatTxt(r)}</strong><button data-edit="${d}">編集</button></div>`).join(''):'<div class="empty">記録はまだありません。</div>';
 }
 document.addEventListener('click',e=>{const b=e.target.closest('[data-edit]');if(b)openEdit(b.dataset.edit)});
-function openEdit(d){editingDate=d;const r=records[d];$('edit-date').value=d;$('edit-weight').value=fmt(r.weight);$('edit-fat').value=fmt(r.fat);$('edit-modal').classList.add('show')}
+function openEdit(d){editingDate=d;const r=records[d];$('edit-date').value=d;$('edit-weight').value=fmt(r.weight);$('edit-fat').value=r.fat==null?'':fmt(r.fat);$('edit-modal').classList.add('show')}
 $('cancel-edit').onclick=()=>$('edit-modal').classList.remove('show');
-$('save-edit').onclick=()=>{const d=$('edit-date').value,w=Number($('edit-weight').value),f=Number($('edit-fat').value);if(!d||$('edit-weight').value===''||$('edit-fat').value===''||!Number.isFinite(w)||!Number.isFinite(f)||w<=0||f<0){showToast('日付と数値を正しく入力してください');return}if(d!==editingDate)delete records[editingDate];records[d]={weight:Number(fmt(w)),fat:Number(fmt(f))};saveData();$('edit-modal').classList.remove('show');renderAll();showToast(`${fmt(w)} kg / ${fmt(f)}% で保存しました！`);if(selectedDate()===editingDate||selectedDate()===d){$('record-date').value=d;loadDate()}};
+$('save-edit').onclick=()=>{const d=$('edit-date').value,w=Number($('edit-weight').value),fv=$('edit-fat').value,f=fv===''?null:Number(fv);if(!d||$('edit-weight').value===''||!Number.isFinite(w)||w<=0||(f!==null&&(!Number.isFinite(f)||f<0))){showToast('日付と体重を正しく入力してください');return}if(d!==editingDate)delete records[editingDate];records[d]={weight:Number(fmt(w)),fat:f===null?null:Number(fmt(f))};saveData();$('edit-modal').classList.remove('show');renderAll();showToast(f===null?`${fmt(w)} kg で保存しました！`:`${fmt(w)} kg / ${fmt(f)}% で保存しました！`);if(selectedDate()===editingDate||selectedDate()===d){$('record-date').value=d;loadDate()}};
 $('delete-record').onclick=()=>{if(!confirm('この記録を削除しますか？'))return;delete records[editingDate];saveData();$('edit-modal').classList.remove('show');renderAll();if(selectedDate()===editingDate)loadDate();showToast('記録を削除しました')};
 
 function svgChart(data,{daily=false,goalLine=false,height=230}={}){
  const W=600,H=height,L=48,R=48,T=13,B=31,iw=W-L-R,ih=H-T-B;
  if(!data.length)return `<div class="empty">データが増えるとグラフが表示されます。</div>`;
- const weights=data.map(x=>x.weight),fats=data.map(x=>x.fat);
+ const weights=data.map(x=>x.weight),fats=data.map(x=>x.fat).filter(v=>v!=null),hasFat=fats.length>0;if(!hasFat)fats.push(0,1);
  let wmin=Math.min(...weights),wmax=Math.max(...weights),fmin=Math.min(...fats),fmax=Math.max(...fats);
  if(goalLine&&goal!==''){wmin=Math.min(wmin,Number(goal));wmax=Math.max(wmax,Number(goal))}
  const pad=r=>Math.max(r*.18,.5);
  {const p=pad(wmax-wmin);wmin-=p;wmax+=p}{const p=pad(fmax-fmin);fmin-=p;fmax+=p}
  const x=i=>L+(data.length===1?iw/2:i*iw/(data.length-1));
  const yw=v=>T+ih-(v-wmin)/(wmax-wmin)*ih, yf=v=>T+ih-(v-fmin)/(fmax-fmin)*ih;
- const path=(key,fn)=>data.map((d,i)=>(i?'L':'M')+x(i).toFixed(1)+','+fn(d[key]).toFixed(1)).join(' ');
+ const path=(key,fn)=>{let o='',st=false;data.forEach((d,i)=>{if(d[key]==null)return;o+=(st?'L':'M')+x(i).toFixed(1)+','+fn(d[key]).toFixed(1)+' ';st=true});return o.trim()};
  let out=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="体重と体脂肪率の推移">`;
- for(let j=0;j<5;j++){const yy=T+j*ih/4;const wv=(wmax-(wmax-wmin)*j/4).toFixed(1),fv=(fmax-(fmax-fmin)*j/4).toFixed(1);out+=`<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#e8d9c9" stroke-dasharray="3 4"/><text x="${L-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#78958f">${fv}</text><text x="${W-R+8}" y="${yy+4}" text-anchor="start" font-size="11" fill="#a96f49">${wv}</text>`}
+ for(let j=0;j<5;j++){const yy=T+j*ih/4;const wv=(wmax-(wmax-wmin)*j/4).toFixed(1),fv=(fmax-(fmax-fmin)*j/4).toFixed(1);out+=`<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#e8d9c9" stroke-dasharray="3 4"/>${hasFat?`<text x="${L-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#78958f">${fv}</text>`:''}<text x="${W-R+8}" y="${yy+4}" text-anchor="start" font-size="11" fill="#a96f49">${wv}</text>`}
  if(goalLine&&goal!==''){const gy=yw(Number(goal));out+=`<line x1="${L}" y1="${gy}" x2="${W-R}" y2="${gy}" stroke="#bd8c62" stroke-width="2" stroke-dasharray="7 5"/><text x="${W-R-3}" y="${gy-6}" text-anchor="end" font-size="11" fill="#9a704e">目標 ${fmt(goal)}kg</text>`}
- out+=`<path d="${path('fat',yf)}" fill="none" stroke="#78958f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="${path('weight',yw)}" fill="none" stroke="#a96f49" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
- data.forEach((d,i)=>{const cx=x(i),cyf=yf(d.fat),cyw=yw(d.weight);if(d.date)out+=`<circle cx="${cx}" cy="${cyf}" r="9" fill="transparent" data-chart-date="${d.date}"/><circle cx="${cx}" cy="${cyw}" r="9" fill="transparent" data-chart-date="${d.date}"/>`;out+=`<circle cx="${cx}" cy="${cyf}" r="3.8" fill="#78958f" stroke="#fff9f1" stroke-width="1.5"/><circle cx="${cx}" cy="${cyw}" r="3.8" fill="#a96f49" stroke="#fff9f1" stroke-width="1.5"/>`});
+ out+=`${hasFat?`<path d="${path('fat',yf)}" fill="none" stroke="#78958f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`:''}<path d="${path('weight',yw)}" fill="none" stroke="#a96f49" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+ data.forEach((d,i)=>{const cx=x(i),cyw=yw(d.weight),hf=d.fat!=null,cyf=hf?yf(d.fat):0;if(d.date){if(hf)out+=`<circle cx="${cx}" cy="${cyf}" r="9" fill="transparent" data-chart-date="${d.date}"/>`;out+=`<circle cx="${cx}" cy="${cyw}" r="9" fill="transparent" data-chart-date="${d.date}"/>`}if(hf)out+=`<circle cx="${cx}" cy="${cyf}" r="3.8" fill="#78958f" stroke="#fff9f1" stroke-width="1.5"/>`;out+=`<circle cx="${cx}" cy="${cyw}" r="3.8" fill="#a96f49" stroke="#fff9f1" stroke-width="1.5"/>`});
  const labels=data.length<=7?data:data.filter((_,i)=>i===0||i===data.length-1||i%Math.ceil(data.length/5)===0);
  labels.forEach(d=>{const i=data.indexOf(d),lab=d.label||d.date.slice(5).replace('-','/');out+=`<text x="${x(i)}" y="${H-9}" text-anchor="middle" font-size="10" fill="#9b8068">${lab}</text>`});
  out+='</svg>';return out;
 }
 function aggregate(entries,kind){
  const groups={};entries.forEach(([date,r])=>{const d=new Date(date+'T12:00:00');let key,label;if(kind==='week'){const day=(d.getDay()+6)%7;const start=new Date(d);start.setDate(d.getDate()-day);key=start.toISOString().slice(0,10);label=(start.getMonth()+1)+'/'+start.getDate()}else{key=date.slice(0,7);label=key.replace('-','/')}
- (groups[key]??={weight:0,fat:0,n:0,label}).weight+=r.weight;groups[key].fat+=r.fat;groups[key].n++});
- return Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0])).map(([key,g])=>({date:key,label:g.label,weight:g.weight/g.n,fat:g.fat/g.n}));
+ (groups[key]??={weight:0,fat:0,n:0,fn:0,label}).weight+=r.weight;if(r.fat!=null){groups[key].fat+=r.fat;groups[key].fn++}groups[key].n++});
+ return Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0])).map(([key,g])=>({date:key,label:g.label,weight:g.weight/g.n,fat:g.fn?g.fat/g.fn:null}));
 }
 function renderCharts(){
  const entries=Object.entries(records).sort((a,b)=>a[0].localeCompare(b[0]));
@@ -282,7 +282,7 @@ function renderGoal(){
  $('to-goal').textContent=latest&&goal!==''?fmt(latest.weight-Number(goal))+' kg':'—';
 }
 $('save-goal').onclick=()=>{const v=$('goal-input').value;if(v===''||!Number.isFinite(Number(v))||Number(v)<=0){showToast('目標体重を入力してください');return}goal=fmt(v);saveData();renderAll();showToast(`目標体重を ${goal} kg に設定しました！`)};
-$('export-csv').onclick=()=>{const rows=[['date','weight_kg','body_fat_percent'],...Object.entries(records).sort((a,b)=>a[0].localeCompare(b[0])).map(([d,r])=>[d,fmt(r.weight),fmt(r.fat)])];const csv='\uFEFF'+rows.map(r=>r.join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='body-tracker.csv';a.click();URL.revokeObjectURL(a.href)};
+$('export-csv').onclick=()=>{const rows=[['date','weight_kg','body_fat_percent'],...Object.entries(records).sort((a,b)=>a[0].localeCompare(b[0])).map(([d,r])=>[d,fmt(r.weight),r.fat==null?'':fmt(r.fat)])];const csv='\uFEFF'+rows.map(r=>r.join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='body-tracker.csv';a.click();URL.revokeObjectURL(a.href)};
 function renderAll(){renderRecent();renderAllList();renderCharts();renderGoal()}
 document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav-btn').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+b.dataset.page));document.body.classList.toggle('fit',b.dataset.page!=='chart');window.scrollTo(0,0);setNavH();if(b.dataset.page==='chart')renderCharts();if(b.dataset.page==='goal')renderGoal()});
 function setNavH(){const n=document.querySelector('.bottom-nav');if(n)document.documentElement.style.setProperty('--nav-h',n.offsetHeight+'px')}
